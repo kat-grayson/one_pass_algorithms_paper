@@ -6,4 +6,4 @@ These algorithms are not specific to any model. To demonstrate how they work we 
 https://zenodo.org/records/10822756
 
 DOI for this repository:
-10.5281/zenodo.11199182
+http://doi.org/10.5281/zenodo.11199182
