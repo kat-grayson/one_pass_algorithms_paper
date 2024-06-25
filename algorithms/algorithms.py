@@ -191,9 +191,32 @@ def init_var(data_chunk : xr.DataArray):
 
     return mean_cumulative, var_cumulative
 
+def divide_by_sample_size(var_cumulative : xr.DataArray, n : int):
+    """Function to convert the one pass cumulative M2 into actual
+    variance by dividing by number of samples
+
+    Arguments
+    ----------
+    var_cumulative : cumulative variance to be converted.
+    n : current number of samples that have contributed to the variance.
+
+    Returns
+    ---------
+    std_cumulative : standard deviation of the streamed data set.
+    """
+
+    # using sample variance NOT population variance
+    if (n - 1) != 0:
+        var_cumulative = (
+            var_cumulative / (n - 1)
+        )
+
+    return var_cumulative
+
 def calc_std(var_cumulative : xr.DataArray, n : int):
         """Function to convert the one pass varience into standard
-        deviation by dividing by number of samples
+        deviation by first dividing by number of samples then square
+        rooting the variance
 
         Arguments 
         ----------
@@ -205,11 +228,9 @@ def calc_std(var_cumulative : xr.DataArray, n : int):
         std_cumulative : standard deviation of the streamed data set.
         """
 
-        # using sample variance NOT population variance
         if (n - 1) != 0:
-            var_cumulative = (
-                var_cumulative / (n - 1)
-            )
+            var_cumulative = divide_by_sample_size(var_cumulative, n)
+
             std_cumulative = np.sqrt(var_cumulative)
 
         return std_cumulative
@@ -227,28 +248,34 @@ def init_tdigests(data_chunk : xr.DataArray, compression = 60):
         ---------
         digest_list : a flat array of of the size of data_source_tail
                 full of empty t digest objects with compression = 60
-        size_data_source_tail : size of global grid without time dimension
+        size_data_chunk_tail : size of global grid without time dimension
         """
+        
+        if type(data_chunk) == xr.DataArray:
+            data_chunk_tail = data_chunk.tail(time=1)
+            size_data_chunk_tail = np.size(data_chunk_tail)
+        else:
+            size_data_chunk_tail = np.size(data_chunk[0,:])
 
-        data_source_tail = data_chunk.tail(time=1)
-        size_data_source_tail = np.size(data_source_tail)
+        #data_source_tail = data_chunk.tail(time=1)
+        #size_data_chunk_tail = np.size(data_source_tail)
 
         # list of dictionaries for each grid cell, preserves order
         digest_list = [{} for _ in range(
-                size_data_source_tail
+                size_data_chunk_tail
             )]
         # converts the list into a numpy array which helps with re-sizing time
         digest_list = np.reshape(
-                digest_list, size_data_source_tail
+                digest_list, size_data_chunk_tail
             )
 
-        for j in range(size_data_source_tail):
+        for j in range(size_data_chunk_tail):
             digest_list[j] = TDigest(compression=compression)
 
-        return digest_list, size_data_source_tail
+        return digest_list, size_data_chunk_tail
 
-def update_tdigest(
-        data_chunk : xr.DataArray, size_data_source_tail : int,
+def update_tdigests(
+        data_chunk : xr.DataArray, size_data_chunk_tail : int,
         digest_list : list, n : int,  w : int = 1
     ):
     """Sequential loop that updates the digest for each grid point.
@@ -259,7 +286,7 @@ def update_tdigest(
     Arguments
     ---------
     data_chunk : incoming xr.DataArray data chunk
-    size_data_source_tail : size of global grid without time dimension
+    size_data_chunk_tail : size of global grid without time dimension
     digest_list : a flat array of of the size of data_source_tail
         full of empty t digest objects with compression = 60
     n : current number of samples that have contributed to the statistic
@@ -273,24 +300,24 @@ def update_tdigest(
     """
     if w == 1:
 
-        data_source_values = np.reshape(
-            data_chunk.values, size_data_source_tail
+        data_chunk_values = np.reshape(
+            data_chunk, size_data_chunk_tail
         )
 
-        iterable = range(size_data_source_tail)
+        iterable = range(size_data_chunk_tail)
         # this is looping through every grid cell
         for j in iterable:
             digest_list[j].update(
-                data_source_values[j]
+                data_chunk_values[j]
             )
 
     else:
-        data_source_values = data_chunk.values.reshape((w, -1))
-        iterable = range(size_data_source_tail)
+        data_chunk_values = np.reshape(data_chunk,[w, -1])
+        iterable = range(size_data_chunk_tail)
         for j in iterable:
             # using crick
             digest_list[j].update(
-                data_source_values[:, j]
+                data_chunk_values[:, j]
             )
 
     n += w
