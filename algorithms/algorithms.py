@@ -71,7 +71,7 @@ def update_mean(data_chunk : xr.DataArray, w : int, n : int,
         (data_chunk - mean_cumulative) / (
         n
     ))
-    
+
     return mean_cumulative, n
 
 def update_var(
@@ -128,14 +128,42 @@ def update_var(
 
     return n, mean_cumulative, var_cumulative
 
-def init_var(data_chunk : xr.DataArray):
+
+def init_mean(data_chunk : xr.DataArray):
     
     """Function to initalise an empty numpy array of the same shape
-    as the spatial grid,
+    as the spatial grid, to store the cumulative mean
 
     Arguments 
     ----------
     data_chunk : incoming xr.DataArray data chunk
+
+    Returns
+    ---------
+    mean_cumulative : an empty numpy array of the same shape as the
+            spatial grid of the data chunk (compressed in the time 
+            dimension) for storing the cumulative mean
+    """
+
+    data_chunk_tail = data_chunk.tail(time=1)
+    shape_data_chunk_tail = np.shape(data_chunk_tail)
+
+    # initialise cumulative mean and cumulative standard deviation
+    mean_cumulative = np.zeros(
+            shape_data_chunk_tail, dtype=np.float64
+        )
+
+    return mean_cumulative
+
+def init_var(data_chunk : xr.DataArray):
+    
+    """Function to initalise two empty numpy arrays of the same shape
+    as the spatial grid, to store the cumulative mean and variance
+
+    Arguments 
+    ----------
+    data_chunk : incoming xr.DataArray data chunk(or in some cases
+            numpy array)
 
     Returns
     ---------
@@ -147,8 +175,11 @@ def init_var(data_chunk : xr.DataArray):
             dimension) for storing the cumulative variance
     """
 
-    data_chunk_tail = data_chunk.tail(time=1)
-    shape_data_chunk_tail = np.shape(data_chunk_tail)
+    if type(data_chunk) == xr.DataArray:
+        data_chunk_tail = data_chunk.tail(time=1)
+        shape_data_chunk_tail = np.shape(data_chunk_tail)
+    else:
+        shape_data_chunk_tail = np.shape(data_chunk)[1:]
 
     # initialise cumulative mean and cumulative standard deviation
     mean_cumulative = np.zeros(
@@ -183,13 +214,14 @@ def calc_std(var_cumulative : xr.DataArray, n : int):
 
         return std_cumulative
 
-def init_tdigests(data_chunk : xr.DataArray):
+def init_tdigests(data_chunk : xr.DataArray, compression = 60):
         """Function to initalise a flat array full of empty 
         tDigest objects.
 
         Arguments 
         ----------
         data_chunk : incoming xr.DataArray data chunk
+        compression : compression value for the digests, default 60
 
         Returns
         ---------
@@ -211,7 +243,7 @@ def init_tdigests(data_chunk : xr.DataArray):
             )
 
         for j in range(size_data_source_tail):
-            digest_list[j] = TDigest(compression=60)
+            digest_list[j] = TDigest(compression=compression)
 
         return digest_list, size_data_source_tail
 
