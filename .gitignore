@@ -1,3 +1,8 @@
+paper/
+
+# Ignore downloaded NetCDF
+*.nc
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
