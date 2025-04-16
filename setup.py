@@ -22,6 +22,6 @@ setup(
         "netcdf4",
         "cytoolz",
         "tqdm",
-        "crick==0.0.5",
+        "crick>=0.0.5",
     ],
 )
