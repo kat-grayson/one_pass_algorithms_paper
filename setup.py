@@ -23,5 +23,6 @@ setup(
         "cytoolz",
         "tqdm",
         "crick>=0.0.5",
+        "one_pass @ git+https://github.com/DestinE-Climate-DT/one_pass@v0.7.2",
     ],
 )
