@@ -23,6 +23,10 @@ setup(
         "cytoolz",
         "tqdm",
         "crick>=0.0.5",
+        "Cartopy==0.24.*",
+        "jupyter==1.1.*",
+        "jupyterlab==4.4.*",
+        "matplotlib==3.10.*",
         "one_pass @ git+https://github.com/DestinE-Climate-DT/one_pass@v0.7.2",
     ],
 )
