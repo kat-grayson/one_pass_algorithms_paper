@@ -27,6 +27,6 @@ setup(
         "jupyter==1.1.*",
         "jupyterlab==4.4.*",
         "matplotlib==3.10.*",
-        "one_pass @ git+https://github.com/DestinE-Climate-DT/one_pass@v0.7.2",
+        "one_pass @ git+https://github.com/DestinE-Climate-DT/one_pass@v0.8.0",
     ],
 )
